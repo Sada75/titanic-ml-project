@@ -150,130 +150,152 @@ export default function LoanForm() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white shadow-xl rounded-xl">
-      <h2 className="text-2xl font-bold mb-6 text-center">
-        Loan Approval Prediction (Neural Network)
-      </h2>
+    <div className="min-h-screen bg-gray-100 p-6">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        {/* LEFT PANEL */}
+        <div className="bg-white p-6 rounded-xl shadow">
+          {/* LEFT CONTENT GOES HERE */}
+          <h2 className="text-2xl font-bold mb-4">
+            Loan Approval Prediction
+          </h2>
 
-      {/* Model Summary Card */}
-      <div className="mb-6 p-4 bg-gray-50 border rounded-lg">
-        <h3 className="text-lg font-semibold mb-2">Model Summary</h3>
-        <div className="grid grid-cols-2 gap-2 text-sm text-gray-700">
-          <p><strong>Model:</strong> {modelInfo.name}</p>
-          <p><strong>Architecture:</strong> {modelInfo.layers}</p>
-          <p><strong>Activation:</strong> {modelInfo.activation}</p>
-          <p><strong>Optimizer:</strong> {modelInfo.optimizer}</p>
-          <p><strong>Accuracy:</strong> {modelInfo.accuracy}</p>
-          <p><strong>Dataset:</strong> {modelInfo.dataset}</p>
-        </div>
-      </div>
-
-
-      {/* Input Form */}
-      <div className="grid grid-cols-2 gap-4">
-        {Object.keys(form).map((key) => (
-          <div key={key} className="flex flex-col">
-          <input
-            name={key}
-            placeholder={placeholders[key]}
-            value={form[key]}
-            onChange={handleChange}
-            className={`border p-2 rounded focus:ring-2 focus:ring-blue-500 ${
-              errors[key] ? "border-red-500" : ""
-            }`}
-          />
-          {errors[key] && (
-            <span className="text-xs text-red-500 mt-1">
-              {errors[key]}
-            </span>
-          )}
-        </div>        
-        ))}
-      </div>
-
-      {/* Threshold Slider */}
-      <div className="mt-6">
-        <label className="font-semibold">
-          Decision Threshold: {threshold}%
-        </label>
-        <input
-          type="range"
-          min="30"
-          max="70"
-          step="1"
-          value={threshold}
-          onChange={(e) => setThreshold(Number(e.target.value))}
-          className="w-full mt-2"
-        />
-        <p className="text-sm text-gray-600 mt-1">
-          Lower threshold → aggressive approvals  
-          Higher threshold → conservative approvals
-        </p>
-      </div>
-
-      {/* Predict Button */}
-      <button
-      onClick={predictLoan}
-      className={`mt-6 w-full p-3 rounded text-white ${
-        Object.keys(errors).length > 0
-          ? "bg-gray-400 cursor-not-allowed"
-          : "bg-blue-600 hover:bg-blue-700"
-        }`}
-      >
-        Predict Loan Approval
-      </button> 
-
-
-      {/* Result */}
-      {probability !== null && (
-        <div className="mt-6 p-5 bg-gray-50 rounded">
-          <p className="text-lg font-semibold">
-            Final Decision:{" "}
-            <span
-              className={
-                finalDecision === "Approved"
-                  ? "text-green-600"
-                  : "text-red-600"
-              }
-            >
-              {finalDecision}
-            </span>
-          </p>
-
-          <p className="mt-2">
-            Approval Probability:{" "}
-            <span className="font-bold">{probability}%</span>
-          </p>
-
-          <p className="mt-1 text-sm text-gray-700">
-            Risk Level: <span className="font-semibold">{risk}</span>
-          </p>
-
-          {/* Probability Bar */}
-          <div className="mt-3">
-            <div className="w-full bg-gray-200 rounded h-3">
-              <div
-                className="bg-blue-600 h-3 rounded"
-                style={{ width: `${probability}%` }}
-              ></div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {explanations.length > 0 && (
-        <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded">
-          <h3 className="font-semibold text-blue-800 mb-2">
-            Why this decision?
-          </h3>
-          <ul className="list-disc list-inside text-sm text-blue-700">
-            {explanations.map((reason, index) => (
-              <li key={index}>{reason}</li>
+          {/* Input Form */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {Object.keys(form).map((key) => (
+              <div key={key} className="flex flex-col">
+                <input
+                  name={key}
+                  placeholder={placeholders[key]}
+                  value={form[key]}
+                  onChange={handleChange}
+                  className={`border p-2 rounded ${
+                    errors[key] ? "border-red-500" : ""
+                  }`}
+                />
+                {errors[key] && (
+                  <span className="text-xs text-red-500 mt-1">
+                    {errors[key]}
+                  </span>
+                )}
+              </div>
             ))}
-          </ul>
-        </div>
-      )}
+          </div>
 
+          {/* Threshold Slider */}
+          <div className="mt-6">
+            <label className="font-semibold">
+              Decision Threshold: {threshold}%
+            </label>
+            <input
+              type="range"
+              min="30"
+              max="70"
+              value={threshold}
+              onChange={(e) => setThreshold(Number(e.target.value))}
+              className="w-full mt-2"
+            />
+            <p className="text-sm text-gray-600 mt-1">
+              Lower = aggressive approvals, Higher = conservative approvals
+            </p>
+          </div>
+
+          {/* Predict Button */}
+          <button
+            onClick={predictLoan}
+            className="mt-6 w-full bg-blue-600 text-white p-3 rounded hover:bg-blue-700"
+          >
+            Predict Loan Approval
+          </button>
+
+        </div>
+  
+        {/* RIGHT PANEL */}
+        <div className="flex flex-col gap-6">
+          
+          {/* RIGHT TOP */}
+          <div className="bg-white p-6 rounded-xl shadow">
+            {/* MODEL SUMMARY HERE */}
+            <h3 className="text-xl font-semibold mb-3">
+              Model Summary
+            </h3>
+
+            <div className="grid grid-cols-2 gap-2 text-sm text-gray-700">
+              <p><strong>Model:</strong> {modelInfo.name}</p>
+              <p><strong>Architecture:</strong> {modelInfo.layers}</p>
+              <p><strong>Activation:</strong> {modelInfo.activation}</p>
+              <p><strong>Optimizer:</strong> {modelInfo.optimizer}</p>
+              <p><strong>Accuracy:</strong> {modelInfo.accuracy}</p>
+              <p><strong>Dataset:</strong> {modelInfo.dataset}</p>
+            </div>
+
+          </div>
+  
+          {/* RIGHT BOTTOM */}
+          <div className="bg-white p-6 rounded-xl shadow">
+            {/* RESULT + EXPLANATION HERE */}
+            {probability !== null ? (
+            <>
+              <h3 className="text-xl font-semibold mb-2">
+                Prediction Result
+              </h3>
+
+              <p className="text-lg">
+                Final Decision:{" "}
+                <span
+                  className={
+                    finalDecision === "Approved"
+                      ? "text-green-600 font-bold"
+                      : "text-red-600 font-bold"
+                  }
+                >
+                  {finalDecision}
+                </span>
+              </p>
+
+              <p className="mt-1">
+                Approval Probability:{" "}
+                <strong>{probability}%</strong>
+              </p>
+
+              <div className="mt-3">
+                <div className="w-full bg-gray-200 rounded h-3">
+                  <div
+                    className="bg-blue-600 h-3 rounded"
+                    style={{ width: `${probability}%` }}
+                  ></div>
+                </div>
+              </div>
+
+              <p className="mt-3 text-sm">
+                Risk Level: <strong>{risk}</strong>
+              </p>
+
+              {/* Explanation */}
+              {explanations.length > 0 && (
+                <div className="mt-4 bg-blue-50 p-4 rounded">
+                  <h4 className="font-semibold mb-2">
+                    Why this decision?
+                  </h4>
+                  <ul className="list-disc list-inside text-sm">
+                    {explanations.map((reason, idx) => (
+                      <li key={idx}>{reason}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </>
+          ) : (
+            <p className="text-gray-500">
+              Enter details and click Predict to see results
+            </p>
+          )}
+
+          </div>
+  
+        </div>
+      </div>
     </div>
   );
+  
 }
