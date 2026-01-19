@@ -1,10 +1,16 @@
 import LoanForm from "./components/LoanForm";
+import CompareModels from "./components/CompareModels";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
 
 function App() {
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center">
-      <LoanForm />
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<LoanForm />} />
+        <Route path="/compare" element={<CompareModels />} />
+      </Routes>
+    </Router>
   );
 }
 
