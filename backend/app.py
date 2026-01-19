@@ -1,66 +1,90 @@
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 import joblib
 import numpy as np
+from fastapi.middleware.cors import CORSMiddleware
 
-# Initialize FastAPI app
-app = FastAPI(title="Loan Approval Neural Network API")
+# -------------------------------
+# App setup
+# -------------------------------
+app = FastAPI(title="Loan Approval Prediction API")
 
-# Enable CORS (for React frontend)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],      # OK for college project
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Load trained neural network and scaler
-model = joblib.load("loan_nn_model.pkl")
+# -------------------------------
+# Load scaler and models
+# -------------------------------
 scaler = joblib.load("scaler.pkl")
 
-@app.get("/")
-def home():
-    return {"message": "Loan Approval Neural Network API is running"}
+models = {
+    "neural_network": joblib.load("models/nn.pkl"),
+    "svm": joblib.load("models/svm.pkl"),
+    "decision_tree": joblib.load("models/decision_tree.pkl"),
+    "knn": joblib.load("models/knn.pkl"),
+}
 
+# -------------------------------
+# Request schema
+# -------------------------------
+class PredictionRequest(BaseModel):
+    model: str
+    gender: int
+    married: int
+    dependents: int
+    education: int
+    self_employed: int
+    applicant_income: float
+    coapplicant_income: float
+    loan_amount: float
+    loan_term: float
+    credit_history: float
+    property_area: int
+    threshold: float = 0.5
+
+
+# -------------------------------
+# Prediction endpoint
+# -------------------------------
 @app.post("/predict")
-def predict(data: dict):
-    """
-    Expects JSON:
-    {
-      gender, married, dependents, education, self_employed,
-      applicant_income, coapplicant_income,
-      loan_amount, loan_term, credit_history, property_area
-    }
-    """
+def predict(req: PredictionRequest):
+    if req.model not in models:
+        return {"error": "Invalid model selected"}
 
-    # Arrange input in correct order
-    features = np.array([[
-        data["gender"],
-        data["married"],
-        data["dependents"],
-        data["education"],
-        data["self_employed"],
-        data["applicant_income"],
-        data["coapplicant_income"],
-        data["loan_amount"],
-        data["loan_term"],
-        data["credit_history"],
-        data["property_area"]
+    # Feature vector (order MUST match training)
+    X = np.array([[
+        req.gender,
+        req.married,
+        req.dependents,
+        req.education,
+        req.self_employed,
+        req.applicant_income,
+        req.coapplicant_income,
+        req.loan_amount,
+        req.loan_term,
+        req.credit_history,
+        req.property_area
     ]])
 
     # Scale input
-    features_scaled = scaler.transform(features)
+    X_scaled = scaler.transform(X)
 
-    probability = model.predict_proba(features_scaled)[0][1]
+    # Select model
+    model = models[req.model]
 
-    prediction = 1 if probability >= 0.4 else 0
+    # Predict probability
+    prob = model.predict_proba(X_scaled)[0][1]
 
-
-    # Probability (confidence)
-    # probability = model.predict_proba(features_scaled)[0][1]
+    # Threshold-based decision
+    decision = "Approved" if prob >= req.threshold else "Rejected"
 
     return {
-        "loan_status": "Approved" if prediction == 1 else "Rejected",
-        "approval_probability": round(float(probability) * 100, 2)
+        "model_used": req.model,
+        "approval_probability": round(prob * 100, 2),
+        "decision": decision
     }

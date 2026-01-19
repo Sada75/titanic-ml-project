@@ -4,6 +4,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import accuracy_score
+import os
+os.makedirs("models", exist_ok=True)
 
 # Load dataset
 df = pd.read_csv("loan_prediction.csv")
@@ -61,4 +63,5 @@ accuracy = accuracy_score(y_test, preds)
 print("Neural Network Accuracy:", accuracy)
 
 # Save model
-joblib.dump(model, "loan_nn_model.pkl")
+joblib.dump(model, "models/nn.pkl")
+

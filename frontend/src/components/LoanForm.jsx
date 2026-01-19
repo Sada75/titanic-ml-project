@@ -1,5 +1,42 @@
 import { useState } from "react";
 
+const modelDetails = {
+  neural_network: {
+    name: "Neural Network (MLP)",
+    layers: "2 Hidden Layers (16, 8)",
+    activation: "ReLU (hidden), Sigmoid (output)",
+    optimizer: "Adam",
+    accuracy: "≈ 76%",
+    dataset: "Loan Approval Dataset"
+  },
+  svm: {
+    name: "Support Vector Machine",
+    layers: "Kernel-based (RBF)",
+    activation: "Non-linear (Kernel Trick)",
+    optimizer: "SMO",
+    accuracy: "≈ 78%",
+    dataset: "Loan Approval Dataset"
+  },
+  decision_tree: {
+    name: "Decision Tree",
+    layers: "Tree Depth = 5",
+    activation: "Rule-based splits",
+    optimizer: "Greedy (Gini Index)",
+    accuracy: "≈ 73%",
+    dataset: "Loan Approval Dataset"
+  },
+  knn: {
+    name: "K-Nearest Neighbors",
+    layers: "k = 7",
+    activation: "Distance-based",
+    optimizer: "Lazy Learning",
+    accuracy: "≈ 75%",
+    dataset: "Loan Approval Dataset"
+  }
+};
+
+
+
 export default function LoanForm() {
   const [form, setForm] = useState({
     gender: "",
@@ -32,6 +69,8 @@ export default function LoanForm() {
   const [risk, setRisk] = useState("");
   const [explanations, setExplanations] = useState([]);
   const [errors, setErrors] = useState({});
+  const [selectedModel, setSelectedModel] = useState("neural_network");
+
 
 
 
@@ -71,6 +110,8 @@ export default function LoanForm() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        model: selectedModel,
+        threshold: threshold / 100,
         gender: Number(form.gender),
         married: Number(form.married),
         dependents: Number(form.dependents),
@@ -88,7 +129,10 @@ export default function LoanForm() {
     const data = await response.json();
 
     const prob = data.approval_probability;
-    setProbability(prob);
+
+    setFinalDecision(data.decision);
+    setProbability(data.approval_probability);
+
 
     // Decision based on threshold
     if (prob >= threshold) {
@@ -149,19 +193,43 @@ export default function LoanForm() {
     property_area: "Property Area (0 = Rural, 1 = Semiurban, 2 = Urban)"
   };
 
+  const currentModel = modelDetails[selectedModel];
+
+
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
+    <div className="max-h-screen bg-gradient-to-br from-slate-100 to-slate-200 p-6">
+      <div className="w-full px-4 h-[calc(100vh-3rem)] grid grid-cols-1 lg:grid-cols-2 gap-8">
+  
         {/* LEFT PANEL */}
-        <div className="bg-white p-6 rounded-xl shadow">
-          {/* LEFT CONTENT GOES HERE */}
-          <h2 className="text-2xl font-bold mb-4">
+        <div className="bg-white/80 backdrop-blur border border-slate-200 p-8 rounded-2xl shadow-lg h-full overflow-auto">
+  
+          {/* Model Selection */}
+          <div className="mb-8">
+            <label className="block font-semibold mb-2 text-slate-700">
+              Select Prediction Model
+            </label>
+            <select
+              value={selectedModel}
+              onChange={(e) => setSelectedModel(e.target.value)}
+              className="w-full border p-2 rounded-lg bg-white"
+            >
+              <option value="neural_network">Neural Network (MLP)</option>
+              <option value="svm">Support Vector Machine (SVM)</option>
+              <option value="decision_tree">Decision Tree</option>
+              <option value="knn">K-Nearest Neighbors (KNN)</option>
+            </select>
+  
+            <p className="text-sm text-gray-600 mt-1">
+              Choose a model to compare prediction behavior
+            </p>
+          </div>
+  
+          <h2 className="text-3xl font-bold mb-6 text-slate-800">
             Loan Approval Prediction
           </h2>
-
+  
           {/* Input Form */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             {Object.keys(form).map((key) => (
               <div key={key} className="flex flex-col">
                 <input
@@ -169,9 +237,13 @@ export default function LoanForm() {
                   placeholder={placeholders[key]}
                   value={form[key]}
                   onChange={handleChange}
-                  className={`border p-2 rounded ${
-                    errors[key] ? "border-red-500" : ""
-                  }`}
+                  className={`rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 transition
+                    ${
+                      errors[key]
+                        ? "border-red-400 focus:ring-red-200"
+                        : "border-slate-300 focus:ring-blue-200"
+                    }
+                  `}
                 />
                 {errors[key] && (
                   <span className="text-xs text-red-500 mt-1">
@@ -181,121 +253,125 @@ export default function LoanForm() {
               </div>
             ))}
           </div>
-
-          {/* Threshold Slider */}
-          <div className="mt-6">
-            <label className="font-semibold">
-              Decision Threshold: {threshold}%
-            </label>
+  
+          {/* Threshold */}
+          <div className="mt-8">
+            <div className="flex justify-between mb-2">
+              <label className="font-semibold text-slate-700">
+                Decision Threshold
+              </label>
+              <span className="text-sm font-medium text-blue-600">
+                {threshold}%
+              </span>
+            </div>
+  
             <input
               type="range"
               min="30"
               max="70"
               value={threshold}
               onChange={(e) => setThreshold(Number(e.target.value))}
-              className="w-full mt-2"
+              className="w-full accent-blue-600"
             />
-            <p className="text-sm text-gray-600 mt-1">
-              Lower = aggressive approvals, Higher = conservative approvals
+  
+            <p className="text-xs text-slate-500 mt-2">
+              Lower = aggressive · Higher = conservative
             </p>
           </div>
-
-          {/* Predict Button */}
+  
           <button
             onClick={predictLoan}
-            className="mt-6 w-full bg-blue-600 text-white p-3 rounded hover:bg-blue-700"
+            className="mt-8 w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 font-semibold shadow-md hover:shadow-lg transition"
           >
             Predict Loan Approval
           </button>
-
         </div>
   
         {/* RIGHT PANEL */}
-        <div className="flex flex-col gap-6">
-          
-          {/* RIGHT TOP */}
-          <div className="bg-white p-6 rounded-xl shadow">
-            {/* MODEL SUMMARY HERE */}
-            <h3 className="text-xl font-semibold mb-3">
+        <div className="flex flex-col gap-8 h-full">
+  
+          {/* TOP: MODEL SUMMARY */}
+          <div className="bg-white/80 backdrop-blur border border-slate-200 p-6 rounded-2xl shadow-lg">
+            <h3 className="text-xl font-semibold mb-4 text-slate-800">
               Model Summary
             </h3>
 
-            <div className="grid grid-cols-2 gap-2 text-sm text-gray-700">
-              <p><strong>Model:</strong> {modelInfo.name}</p>
-              <p><strong>Architecture:</strong> {modelInfo.layers}</p>
-              <p><strong>Activation:</strong> {modelInfo.activation}</p>
-              <p><strong>Optimizer:</strong> {modelInfo.optimizer}</p>
-              <p><strong>Accuracy:</strong> {modelInfo.accuracy}</p>
-              <p><strong>Dataset:</strong> {modelInfo.dataset}</p>
+            <div className="grid grid-cols-2 gap-y-2 text-sm text-slate-700">
+              <p><strong>Model:</strong> {currentModel.name}</p>
+              <p><strong>Architecture:</strong> {currentModel.layers}</p>
+              <p><strong>Activation:</strong> {currentModel.activation}</p>
+              <p><strong>Optimizer:</strong> {currentModel.optimizer}</p>
+              <p><strong>Accuracy:</strong> {currentModel.accuracy}</p>
+              <p><strong>Dataset:</strong> {currentModel.dataset}</p>
             </div>
+          </div>  
 
-          </div>
   
-          {/* RIGHT BOTTOM */}
-          <div className="bg-white p-6 rounded-xl shadow">
-            {/* RESULT + EXPLANATION HERE */}
+          {/* BOTTOM: RESULT */}
+          <div className="bg-white/80 backdrop-blur border border-slate-200 p-6 rounded-2xl shadow-lg flex-1 overflow-auto">
             {probability !== null ? (
-            <>
-              <h3 className="text-xl font-semibold mb-2">
-                Prediction Result
-              </h3>
-
-              <p className="text-lg">
-                Final Decision:{" "}
-                <span
-                  className={
-                    finalDecision === "Approved"
-                      ? "text-green-600 font-bold"
-                      : "text-red-600 font-bold"
-                  }
-                >
-                  {finalDecision}
-                </span>
-              </p>
-
-              <p className="mt-1">
-                Approval Probability:{" "}
-                <strong>{probability}%</strong>
-              </p>
-
-              <div className="mt-3">
-                <div className="w-full bg-gray-200 rounded h-3">
-                  <div
-                    className="bg-blue-600 h-3 rounded"
-                    style={{ width: `${probability}%` }}
-                  ></div>
-                </div>
-              </div>
-
-              <p className="mt-3 text-sm">
-                Risk Level: <strong>{risk}</strong>
-              </p>
-
-              {/* Explanation */}
-              {explanations.length > 0 && (
-                <div className="mt-4 bg-blue-50 p-4 rounded">
-                  <h4 className="font-semibold mb-2">
-                    Why this decision?
-                  </h4>
-                  <ul className="list-disc list-inside text-sm">
-                    {explanations.map((reason, idx) => (
-                      <li key={idx}>{reason}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </>
-          ) : (
-            <p className="text-gray-500">
-              Enter details and click Predict to see results
-            </p>
-          )}
-
-          </div>
+              <>
+                <h3 className="text-xl font-semibold mb-3 text-slate-800">
+                  Prediction Result
+                </h3>
   
+                <p className="text-lg">
+                  Final Decision:{" "}
+                  <span
+                    className={`font-bold ${
+                      finalDecision === "Approved"
+                        ? "text-green-600"
+                        : "text-red-600"
+                    }`}
+                  >
+                    {finalDecision}
+                  </span>
+                </p>
+  
+                <p className="mt-1 text-sm text-slate-700">
+                  Approval Probability: <strong>{probability}%</strong>
+                </p>
+  
+                <div className="mt-4">
+                  <div className="w-full h-3 rounded-full bg-slate-200">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all"
+                      style={{ width: `${probability}%` }}
+                    />
+                  </div>
+                </div>
+  
+                <p className="mt-3 text-sm">
+                  Risk Level: <strong>{risk}</strong>
+                </p>
+  
+                {explanations.length > 0 && (
+                  <div className="mt-5 rounded-xl border border-blue-200 bg-blue-50 p-4">
+                    <h4 className="font-semibold mb-2 text-blue-800">
+                      Why this decision?
+                    </h4>
+                    <ul className="list-disc list-inside text-sm text-blue-900 space-y-1">
+                      {explanations.map((reason, idx) => (
+                        <li key={idx}>{reason}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+  
+                <p className="text-sm text-gray-600 mt-4">
+                  Model Used: <strong>{selectedModel}</strong>
+                </p>
+              </>
+            ) : (
+              <div className="h-full flex items-center justify-center text-slate-500 text-sm">
+                Enter details and click <strong className="ml-1">Predict</strong>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
   );
+  
   
 }
